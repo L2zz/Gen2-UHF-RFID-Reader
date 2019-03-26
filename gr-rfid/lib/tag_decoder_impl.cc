@@ -29,7 +29,7 @@
 #include <sys/time.h>
 #include "tag_decoder_impl.h"
 
-#define SHIFT_SIZE 3  // used in tag_detection
+#define SHIFT_SIZE 0  // used in tag_detection
 
 namespace gr
 {
@@ -221,12 +221,25 @@ namespace gr
     {
       std::vector<float> decoded_bits;
 
+      // Calculate length of one bit from full length of signal
+      int expected_end = n_samples_TAG_BIT*n_expected_bit;
+      int end_idx = expected_end;
+      float prev_amp, cur_amp;
+      for (int i=0; i<n_samples_TAG_BIT; i++) {
+        prev_amp = norm_in[expected_end-(int)(0.1*n_samples_TAG_BIT)+i];
+        cur_amp = norm_in[expected_end+i];
+
+        if (abs(cur_amp - prev_amp) > (0.1*cur_amp)) end_idx = expected_end+i;
+      }
+
+      float presize_samples = (float)end_idx/n_expected_bit;
+
       int mask_level = determine_first_mask_level(norm_in, index);
       int shift = 0;
 
       for(int i=0 ; i<n_expected_bit ; i++)
       {
-        int idx = index + i*n_samples_TAG_BIT + shift;  // start point of decoding bit with shifting
+        int idx = index + i*presize_samples + shift;  // start point of decoding bit with shifting
         float max_corr = 0.0f;
         int max_index;
         int curr_shift;
