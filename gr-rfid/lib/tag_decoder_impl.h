@@ -35,6 +35,7 @@ namespace gr {
       private:
 
         float n_samples_TAG_BIT;
+        float presize_tag_bit;
         int s_rate;
         std::vector<float> pulse_bit;
         float T_global;

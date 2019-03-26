@@ -58,6 +58,7 @@ namespace gr
       char_bits = (char *) malloc( sizeof(char) * 128);
 
       n_samples_TAG_BIT = TAG_BIT_D * s_rate / pow(10,6);
+      presize_tag_bit = n_samples_TAG_BIT;
       //GR_LOG_INFO(d_logger, "Number of samples of Tag bit : "<< n_samples_TAG_BIT);
     }
 
@@ -185,7 +186,7 @@ namespace gr
       int max_index = -1;
 
       float average_amp = 0.0f;
-      for(int j=-(n_samples_TAG_BIT*0.5) ; j<(n_samples_TAG_BIT*1.5) ; j++)
+      for(int j=-(presize_tag_bit*0.5) ; j<(presize_tag_bit*1.5) ; j++)
         average_amp += norm_in[index+j];
       average_amp /= (2*n_samples_TAG_BIT);
 
@@ -193,12 +194,12 @@ namespace gr
       for(int i=0 ; i<2 ; i++)
       {
         float corr = 0.0f;
-        for(int j=-(n_samples_TAG_BIT*0.5) ; j<(n_samples_TAG_BIT*1.5) ; j++)
+        for(int j=-(presize_tag_bit*0.5) ; j<(presize_tag_bit*1.5) ; j++)
         {
           int idx;
           if(j < 0) idx = 0;                            // first section (trailing half bit of the previous bit)
-          else if(j < (n_samples_TAG_BIT*0.5)) idx = 1; // second section (leading half bit of the data bit)
-          else if(j < n_samples_TAG_BIT) idx = 2;       // third section (trailing half bit of the data bit)
+          else if(j < (presize_tag_bit*0.5)) idx = 1; // second section (leading half bit of the data bit)
+          else if(j < presize_tag_bit) idx = 2;       // third section (trailing half bit of the data bit)
           else idx = 3;                                 // forth section (leading half bit of the later bit)
 
           corr += masks[mask_level][i][idx] * (norm_in[index+j] - average_amp);
@@ -221,25 +222,43 @@ namespace gr
     {
       std::vector<float> decoded_bits;
 
+      std::ofstream presize_file("debug_data/presize", std::ios::app);
+      std::ofstream signal_file("debug_data/signal", std::ios::app);
+
       // Calculate length of one bit from full length of signal
-      int expected_end = n_samples_TAG_BIT*n_expected_bit;
+      int expected_end = index+n_samples_TAG_BIT*n_expected_bit;
       int end_idx = expected_end;
+      float avg_amp=0.0;
       float prev_amp, cur_amp;
-      for (int i=0; i<n_samples_TAG_BIT; i++) {
-        prev_amp = norm_in[expected_end-(int)(0.1*n_samples_TAG_BIT)+i];
+      
+      for (int i=-3*n_samples_TAG_BIT; i<n_samples_TAG_BIT; i++) {
+        avg_amp += norm_in[expected_end+i];
+      }
+      avg_amp /= 4*n_samples_TAG_BIT;
+
+      for (int i=-3*n_samples_TAG_BIT; i<n_samples_TAG_BIT; i++) {
+        prev_amp = norm_in[expected_end+i-1];
         cur_amp = norm_in[expected_end+i];
 
-        if (abs(cur_amp - prev_amp) > (0.1*cur_amp)) end_idx = expected_end+i;
+        if ((cur_amp-avg_amp)*(prev_amp-avg_amp) < 0) {
+            end_idx = expected_end+i;
+        }
       }
 
-      float presize_samples = (float)end_idx/n_expected_bit;
+      for (int i=index; i<end_idx; i++) {
+        signal_file << norm_in[i] << " ";
+      }
+      signal_file << std::endl;
 
+      presize_tag_bit = (end_idx-index)/(1.0*n_expected_bit);
+      presize_file << presize_tag_bit << " " << std::endl;
+      
       int mask_level = determine_first_mask_level(norm_in, index);
       int shift = 0;
 
       for(int i=0 ; i<n_expected_bit ; i++)
       {
-        int idx = index + i*presize_samples + shift;  // start point of decoding bit with shifting
+        int idx = index + i*presize_tag_bit + shift;  // start point of decoding bit with shifting
         float max_corr = 0.0f;
         int max_index;
         int curr_shift;
@@ -277,6 +296,9 @@ namespace gr
         decoded_bits.push_back(max_index);
         shift += curr_shift;  // update the shift value
       }
+
+      presize_file.close();
+      signal_file.close();
 
       return decoded_bits;
     }
