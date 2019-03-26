@@ -231,12 +231,12 @@ namespace gr
       float avg_amp=0.0;
       float prev_amp, cur_amp;
       
-      for (int i=-3*n_samples_TAG_BIT; i<n_samples_TAG_BIT; i++) {
+      for (int i=-3.5*n_samples_TAG_BIT; i<0.5*n_samples_TAG_BIT; i++) {
         avg_amp += norm_in[expected_end+i];
       }
       avg_amp /= 4*n_samples_TAG_BIT;
 
-      for (int i=-3*n_samples_TAG_BIT; i<n_samples_TAG_BIT; i++) {
+      for (int i=-3.5*n_samples_TAG_BIT; i<0.5*n_samples_TAG_BIT; i++) {
         prev_amp = norm_in[expected_end+i-1];
         cur_amp = norm_in[expected_end+i];
 
