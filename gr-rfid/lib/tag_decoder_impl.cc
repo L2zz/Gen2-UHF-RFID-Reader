@@ -29,7 +29,7 @@
 #include <sys/time.h>
 #include "tag_decoder_impl.h"
 
-#define SHIFT_SIZE 3  // used in tag_detection
+#define SHIFT_SIZE 5  // used in tag_detection
 
 namespace gr
 {
@@ -461,6 +461,15 @@ namespace gr
           log.open("debug_message", std::ios::app);
           log << "│ Preamble detected!" << std::endl;
           log.close();
+
+          // Save EPC data
+          std::ofstream data_log("data_log/data", std::ios::app | std::ios::binary);
+          for (int i=0; i<n_samples_TAG_BIT*(EPC_BITS+1); i++) {
+            data_log << norm_in[EPC_index+i];
+          }
+          data_log << std::endl;
+          data_log.close();
+
           std::vector<float> EPC_bits = tag_detection(norm_in, EPC_index, EPC_BITS-1);  // EPC_BITS includes one dummy bit
 
           // convert EPC_bits from float to char in order to use Buettner's function
