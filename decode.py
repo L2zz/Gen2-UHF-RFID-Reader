@@ -2,7 +2,6 @@
 Decode EPC data with several algorithms and get result
 """
 import sys
-import csv
 import time
 
 """
@@ -36,7 +35,7 @@ class DecodingAlgorithm:
         mask_level = 1
         max_corr = 0.0
         for i in range(2):
-            index = single_unit
+            index = int(single_unit*0.5)
             _, corr = cls.decoding_single_bit(data, index, i, single_unit)
             if corr > max_corr:
                 max_corr = corr
@@ -118,6 +117,7 @@ class DecodingAlgorithm:
         for i in range(NUM_OF_EPC_BITS):
             max_corr = 0.0
             index = i*NUM_OF_SAMPLES_PER_ONE_BIT + shift - SLIDING_WINDOW
+            index += int(NUM_OF_SAMPLES_PER_ONE_BIT*0.5)
             for j in range(SLIDING_WINDOW*2+1):
                 index += j
                 bit_candidate, corr = cls.decoding_single_bit(data, index, prev_level,
@@ -143,6 +143,7 @@ class DecodingAlgorithm:
         prev_level = cls.get_first_masklevel(data, presize_samples)
         for i in range(NUM_OF_EPC_BITS):
             index = i*presize_samples
+            index += int(presize_samples*0.5)
             decoded_bit, _ = cls.decoding_single_bit(data, index, prev_level,
                                                      presize_samples)
             one_round_decoded.append(decoded_bit)
@@ -163,10 +164,13 @@ class DecodingAlgorithm:
             max_corr = 0.0
             cur_shift = 0
             index = i*NUM_OF_SAMPLES_PER_ONE_BIT + shift - SLIDING_WINDOW
+            index += int(NUM_OF_SAMPLES_PER_ONE_BIT*0.5)
             decoded_bit, max_corr = cls.decoding_single_bit(data, index, prev_level,
                                                             NUM_OF_SAMPLES_PER_ONE_BIT)
             if max_corr < cls.DECODING_THRESHOLD:
                 for j in range(SLIDING_WINDOW*2+1):
+                    if j == SLIDING_WINDOW:
+                        continue
                     index += j
                     bit_candidate, corr = cls.decoding_single_bit(data, index, prev_level,
                                                                   NUM_OF_SAMPLES_PER_ONE_BIT)
