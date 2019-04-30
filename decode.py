@@ -181,35 +181,26 @@ class DecodingAlgorithm:
 
         return one_round_decoded
 
-def print_result(source_file, decode_result, time_avg_result):
+def print_result(source_file, decode_result, time_avg):
     """
-    Print results
+    Print results from different algorithm
     """
-    result_file = open("result", 'a')
-    csv_wr = csv.writer(result_file, delimiter=',')
+    accuracy_arr = []
+    for result_arr in decode_result:
+        total = 0
+        success = 0
+        for result in result_arr:
+            if result:
+                success += 1
+            total += 1
+        accuracy = (success*1.0) / total
+        accuracy_arr.append(accuracy)
 
-    result_arr = []
-    result_arr.append(source_file)
-
-    total = 0
-    success = 0
-    for result in decode_result:
-        if result:
-            success += 1
-        total += 1
-    accuracy = (success*1.0) / total
-    result_arr.append(accuracy)
-
-    time_avg = 0.0
-    for time_result in time_avg_result:
-        time_avg += time_result
-    time_avg /= (1.0*len(time_avg_result))
-
-    result_arr.append(time_avg)
-    csv_wr.writerow(result_arr)
-
-    print(result_arr + ": Accuracy = %.4f Time avg = %.4f" % (accuracy, time_avg))
-    result_file.close()
+    print(source_file)
+    print("INSPECT ALL:  Accuracy = %6.4f Time avg = %6.4f" % (accuracy_arr[0], time_avg[0]))
+    print("PRESIZE:      Accuracy = %6.4f Time avg = %6.4f" % (accuracy_arr[1], time_avg[1]))
+    print("THRESHOLD:    Accuracy = %6.4f Time avg = %6.4f" % (accuracy_arr[2], time_avg[2]))
+    print("")
 
 def check_crc(decoded_data):
     """
@@ -268,24 +259,22 @@ def decode_data(data, decoding_id):
             one_round_decoded = DecodingAlgorithm.decoding_inspect_all(data[i])
             decoded_data.append(one_round_decoded)
             decoding_time_avg += time.time() - start_time
-        decoding_time_avg /= NUM_OF_ROUNDS*1.0
     elif decoding_id == DecodingAlgorithm.PRESIZE:
         for i in range(NUM_OF_ROUNDS):
             start_time = time.time()
             one_round_decoded = DecodingAlgorithm.decoding_presize(data[i])
             decoded_data.append(one_round_decoded)
             decoding_time_avg += time.time() - start_time
-        decoding_time_avg /= NUM_OF_ROUNDS*1.0
     elif decoding_id == DecodingAlgorithm.THRESHOLD:
         for i in range(NUM_OF_ROUNDS):
             start_time = time.time()
             one_round_decoded = DecodingAlgorithm.decoding_threshold(data[i])
             decoded_data.append(one_round_decoded)
             decoding_time_avg += time.time() - start_time
-        decoding_time_avg /= NUM_OF_ROUNDS*1.0
     else:
         print("Unknown algorithm")
         sys.exit()
+    decoding_time_avg /= NUM_OF_ROUNDS*1.0
 
     return decoded_data, decoding_time_avg
 
