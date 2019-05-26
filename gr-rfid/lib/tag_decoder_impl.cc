@@ -463,9 +463,9 @@ namespace gr
           log.close();
 
           // Save EPC data
-          std::ofstream data_log("data_log/data", std::ios::app | std::ios::binary);
-          for (int i=0; i<n_samples_TAG_BIT*(EPC_BITS+1); i++) {
-            data_log << norm_in[EPC_index+i];
+          std::ofstream data_log("data_log/data",std::ios::app);
+          for (int i=-(n_samples_TAG_BIT); i<n_samples_TAG_BIT*(EPC_BITS+1); i++) {
+            data_log << norm_in[EPC_index+i] << " ";
           }
           data_log << std::endl;
           data_log.close();
